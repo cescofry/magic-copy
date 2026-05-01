@@ -22,16 +22,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Run tests
+        run: npm test
 
-      - name: Install web-ext
-        run: npm install -g web-ext
+      - name: Build Firefox extension
+        run: npm run build:firefox
 
-      - name: Sign extension (unlisted / self-hosted)
+      - name: Build Chrome extension
+        run: npm run build:chrome
+
+      - name: Sign Firefox extension (unlisted via AMO)
         run: |
+          npm install -g web-ext
           web-ext sign \
-            --source-dir dist \
+            --source-dir dist/firefox \
             --channel unlisted \
             --api-key "${{ secrets.AMO_API_KEY }}" \
             --api-secret "${{ secrets.AMO_API_SECRET }}" \
@@ -41,10 +45,13 @@ jobs:
         id: xpi
         run: echo "FILE=$(ls artifacts/*.xpi)" >> "$GITHUB_OUTPUT"
 
+      - name: Package Chrome extension
+        run: (cd dist/chrome && zip -r ../../magic-copy-chrome.zip .)
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Magic Copy ${{ github.ref_name }}"
-          files: ${{ steps.xpi.outputs.FILE }}
+          files: |
+            ${{ steps.xpi.outputs.FILE }}
+            magic-copy-chrome.zip
           generate_release_notes: true
-          fail_on_unmatched_files: true

@@ -4,8 +4,14 @@
   "private": true,
   "description": "Smart clipboard picker triggered by Cmd/Ctrl+C when nothing is selected",
   "scripts": {
-    "build": "vite build && cp manifest.json dist/manifest.json",
-    "watch": "vite build --watch",
+    "build": "npm run build:firefox && npm run build:chrome",
+    "build:firefox": "BROWSER=firefox vite build",
+    "build:chrome": "BROWSER=chrome vite build",
+    "watch:firefox": "BROWSER=firefox vite build --watch",
+    "watch:chrome": "BROWSER=chrome vite build --watch",
+    "package:firefox": "cd dist/firefox && zip -r ../../magic-copy-firefox.zip .",
+    "package:chrome": "cd dist/chrome && zip -r ../../magic-copy-chrome.zip .",
+    "package": "npm run package:firefox && npm run package:chrome",
     "test": "vitest run",
     "test:watch": "vitest"
   },

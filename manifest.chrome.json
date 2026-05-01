@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Magic Copy",
+  "version": "0.1.0",
+  "description": "Smart clipboard picker on Cmd/Ctrl+C with no selection.",
+  "permissions": ["clipboardWrite"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
