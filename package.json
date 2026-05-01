@@ -1,0 +1,19 @@
+{
+  "name": "magic-copy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart clipboard picker triggered by Cmd/Ctrl+C when nothing is selected",
+  "scripts": {
+    "build": "vite build && cp manifest.json dist/manifest.json",
+    "watch": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.2.12",
+    "vitest": "^1.6.0",
+    "jsdom": "^24.0.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  }
+}
