@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install web-ext
+        run: npm install -g web-ext
+
+      - name: Sign extension (unlisted / self-hosted)
+        run: |
+          web-ext sign \
+            --source-dir dist \
+            --channel unlisted \
+            --api-key "${{ secrets.AMO_API_KEY }}" \
+            --api-secret "${{ secrets.AMO_API_SECRET }}" \
+            --artifacts-dir artifacts
+
+      - name: Find signed XPI
+        id: xpi
+        run: echo "FILE=$(ls artifacts/*.xpi)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Magic Copy ${{ github.ref_name }}"
+          files: ${{ steps.xpi.outputs.FILE }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
