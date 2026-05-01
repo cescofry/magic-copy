@@ -25,6 +25,13 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Set version from tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          jq --arg v "$VERSION" '.version = $v' manifest.firefox.json > tmp.json && mv tmp.json manifest.firefox.json
+          jq --arg v "$VERSION" '.version = $v' manifest.chrome.json > tmp.json && mv tmp.json manifest.chrome.json
+
       - name: Build Firefox extension
         run: npm run build:firefox
 
