@@ -5,7 +5,11 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "magic-copy@ziofritz",
-      "strict_min_version": "109.0"
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": [],
+        "optional": []
+      }
     }
   },
   "description": "Smart clipboard picker on Cmd/Ctrl+C with no selection.",
@@ -17,8 +21,5 @@
       "run_at": "document_idle",
       "all_frames": true
     }
-  ],
-  "icons": {
-    "48": "icon.png"
-  }
+  ]
 }
