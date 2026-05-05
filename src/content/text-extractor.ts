@@ -67,6 +67,64 @@ function findParagraph(node: Node): string {
   return (node.textContent ?? '').trim();
 }
 
+function extractLine(node: Text, offset: number): string {
+  const len = node.length;
+  if (len === 0) return '';
+
+  const refOffset = Math.min(offset, len - 1);
+  const refRange = document.createRange();
+  refRange.setStart(node, refOffset);
+  refRange.setEnd(node, refOffset + 1);
+  const refRect = refRange.getBoundingClientRect();
+  if (!refRect.height) return node.textContent!.trim();
+  const caretY = refRect.top;
+  const threshold = refRect.height * 0.5;
+
+  let start = offset;
+  while (start > 0) {
+    const r = document.createRange();
+    r.setStart(node, start - 1);
+    r.setEnd(node, start);
+    if (Math.abs(r.getBoundingClientRect().top - caretY) > threshold) break;
+    start--;
+  }
+
+  let end = Math.max(offset, 1);
+  while (end < len) {
+    const r = document.createRange();
+    r.setStart(node, end);
+    r.setEnd(node, end + 1);
+    if (Math.abs(r.getBoundingClientRect().top - caretY) > threshold) break;
+    end++;
+  }
+
+  return node.textContent!.slice(start, end).trim();
+}
+
+function findOuterContainers(node: Node): Candidate[] {
+  const SKIP_TAGS = new Set(['BODY', 'HTML', 'HEAD']);
+  const MAX = 3;
+
+  // Find the first block ancestor (the paragraph level)
+  let el: Element | null = node.parentElement;
+  while (el && !BLOCK_ELEMENTS.has(el.tagName)) {
+    el = el.parentElement;
+  }
+
+  const results: Candidate[] = [];
+  el = el?.parentElement ?? null;
+
+  while (el && !SKIP_TAGS.has(el.tagName) && results.length < MAX) {
+    const text = ((el as HTMLElement).innerText ?? el.textContent ?? '').trim();
+    if (text) {
+      results.push({ label: el.tagName.toLowerCase(), value: text });
+    }
+    el = el.parentElement;
+  }
+
+  return results;
+}
+
 export function extractCandidates(x: number, y: number): Candidate[] {
   const caret = getCaretNode(x, y);
   if (!caret) return [];
@@ -88,8 +146,13 @@ export function extractCandidates(x: number, y: number): Candidate[] {
   if (codeBlock) add('Code', codeBlock);
 
   add('Word', extractWord(text, offset));
+  add('Line', extractLine(node, offset));
   add('Sentence', extractSentence(text, offset));
   add('Paragraph', findParagraph(node));
+
+  for (const c of findOuterContainers(node)) {
+    add(c.label, c.value);
+  }
 
   return results;
 }
