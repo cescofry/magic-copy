@@ -76,7 +76,7 @@ function extractLine(node: Text, offset: number): string {
   refRange.setStart(node, refOffset);
   refRange.setEnd(node, refOffset + 1);
   const refRect = refRange.getBoundingClientRect();
-  if (!refRect.height) return node.textContent!.trim();
+  if (!refRect.height) return '';
   const caretY = refRect.top;
   const threshold = refRect.height * 0.5;
 

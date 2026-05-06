@@ -12,6 +12,11 @@ function mockCaret(node: Text, offset: number) {
 
 beforeEach(() => {
   document.body.innerHTML = '';
+  // jsdom does not implement Range.getBoundingClientRect; return height:0 so extractLine
+  // falls back to returning the full text-node content.
+  Range.prototype.getBoundingClientRect = vi.fn().mockReturnValue(
+    { top: 0, height: 0, left: 0, right: 0, bottom: 0, width: 0 }
+  );
 });
 
 describe('extractCandidates', () => {
@@ -95,5 +100,43 @@ describe('extractCandidates', () => {
     const results = extractCandidates(0, 0);
     const word = results.find(r => r.label === 'Word');
     expect(word?.value).toBe('world');
+  });
+
+  it('extracts Line using visual bounding rects — cursor on first of two lines', () => {
+    // 'Hello world foo': chars 0–11 are on line 1 (top: 0), chars 12+ are on line 2 (top: 20)
+    Range.prototype.getBoundingClientRect = vi.fn().mockImplementation(function (this: Range) {
+      return (this.startOffset < 12)
+        ? { top: 0, height: 16, left: 0, right: 0, bottom: 16, width: 8 }
+        : { top: 20, height: 16, left: 0, right: 0, bottom: 36, width: 8 };
+    });
+
+    const node = makeTextNode('Hello world foo');
+    mockCaret(node, 7); // cursor inside "world" — on line 1
+    const results = extractCandidates(0, 0);
+    const line = results.find(r => r.label === 'Line');
+    // Line 1 spans chars 0–11 → 'Hello world'
+    expect(line?.value).toBe('Hello world');
+  });
+
+  it('extracts outer container candidates when ancestor text differs', () => {
+    const article = document.createElement('article');
+    const h1 = document.createElement('h1');
+    h1.textContent = 'Title';
+    const p = document.createElement('p');
+    p.textContent = 'Body text here.';
+    article.appendChild(h1);
+    article.appendChild(p);
+    document.body.appendChild(article);
+
+    const textNode = p.firstChild as Text;
+    mockCaret(textNode, 3);
+
+    const results = extractCandidates(0, 0);
+    // Paragraph = 'Body text here.'; article contains both heading + para so its
+    // text content differs → should appear as an outer container candidate.
+    const labels = results.map(r => r.label);
+    expect(labels).toContain('article');
+    const articleCandidate = results.find(r => r.label === 'article');
+    expect(articleCandidate?.value).toContain('Body text here.');
   });
 });
